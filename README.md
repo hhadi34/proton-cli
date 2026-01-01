@@ -6,7 +6,7 @@ It automates common setup tasks such as locating your Proton installation, manag
 
 ---
 
-## 🚀 Introduction
+## Introduction
 
 Running Windows software with Proton is great — but setting up prefixes, managing versions, and launching apps can be tedious.  
 **proton-cli** simplifies this process.
@@ -20,7 +20,7 @@ With a few simple commands, you can:
 
 ---
 
-## 🧩 Installation
+## Installation
 
 You can install **proton-cli** in two ways:
 
@@ -47,7 +47,7 @@ Make sure `~/.local/bin` is in your `$PATH` if installing via pip for a single u
 
 ---
 
-## ⚙️ Usage
+## Usage
 
 ### 1. Checking Proton Installation
 
@@ -89,7 +89,7 @@ This will:
 - Ask for **environment variables** if needed  
 - Launch the `.exe` file under Proton  
 
-💡 *Note:* The first `.exe` you run is often the installer. After installation, use `run-app` to find and launch the main executable.
+*Note:* The first `.exe` you run is often the installer. After installation, use `run-app` to find and launch the main executable.
 
 ---
 
@@ -120,18 +120,18 @@ proton-cli -h
 
 ---
 
-## 🧠 The Software’s Origin
+## The Software’s Origin
 
 *(Section to be completed by the author.)*
 
 ---
 
-## 🔮 The Future of proton-cli
+## The Future of proton-cli
 
 Here’s what’s planned for upcoming releases:
 
-- ✅ ARM support for Steam Deck and similar devices  
-- ✅ Distribution packages for Fedora, Arch, and more  
-- ✅ A GTK-based graphical interface  
-- ✅ Advanced options for power users  
-- ✅ Deeper integration with other software (beyond environment variables)  
+- ARM support for Steam Frame and similar devices  
+- Distribution packages for Fedora, Arch, and more  
+- A GTK-based graphical interface  
+- Advanced options for power users  
+- Deeper integration with other software (beyond environment variables)  
