@@ -35,17 +35,16 @@ If any dependencies are missing, fix them with:
 ```bash
 sudo apt --fix-broken install
 ```
-
-### Option 2: Using `pip`
-If you prefer Python’s package manager:
-
+### Option 2: Using the script manually
+Download proton_cli.py then make it an executable file by running:
 ```bash
-pip install proton-cli
+chmod +x proton_cli.py
 ```
-
-Make sure `~/.local/bin` is in your `$PATH` if installing via pip for a single user.
-
-
+then put the file into /usr/local/bin/ by using
+```bash
+sudo cp /path/to/proton_cli.py /usr/local/bin/proton-cli
+```
+*Note:* In the current state of the development, **there isn't a method to update the software unless if you redownload it**. Next update will add the self updating system.
 
 ## Usage
 
@@ -122,8 +121,7 @@ proton-cli -h
 
 ## The Software’s Origin
 
-*(Section to be completed by the author.)*
-
+My friends and I entered a competition to create an XR game. I was in charge of the music and sound effects, but I ended up wasting half of my time just trying to get FL Studio to run on Linux. I first tried running it with Wine, but it was incredibly sluggish. Then I tried using it with Proton through Bottles, but Bottles itself was slow (for context, my laptop was only a year old and had good specs). The only way I could make it work was by adding the .exe to my Steam library and setting up a bunch of environment variables in the Python script that runs Proton. After that, I created a .desktop file so I could launch it easily without having to remember all the necessary variables. This might sound simple, but it actually took a lot of effort. I had to dig through multiple directories using Nemo and consult different AI models to make it all work. In the end, we lost the competition because half of the code broke at the last minute and the presentation fell apart. Months later, when talking with my friends about what did we do while making the game, the idea for my new software came to me. I realized two things: 1. Proton is better than Wine. That’s why many people who have issues with Wine might prefer Proton. Proton can actually run independently with the right environment variables, directories, and dependencies. So, on New Year’s Eve, I started working on it. Just as we entered the new year, the software was ready.
 
 
 ## The Future of proton-cli
