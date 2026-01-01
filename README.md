@@ -4,7 +4,7 @@
 
 It automates common setup tasks such as locating your Proton installation, managing prefixes, and running executables with minimal hassle — all from the terminal.
 
----
+
 
 ## Introduction
 
@@ -18,7 +18,7 @@ With a few simple commands, you can:
 - Run `.exe` files seamlessly  
 - Generate desktop shortcuts for quick access  
 
----
+
 
 ## Installation
 
@@ -45,7 +45,7 @@ pip install proton-cli
 
 Make sure `~/.local/bin` is in your `$PATH` if installing via pip for a single user.
 
----
+
 
 ## Usage
 
@@ -62,7 +62,7 @@ If multiple Proton versions are found, you’ll be prompted to choose one.
 
 If **no installation is found**, you can manually specify the directory after running the `check` command.
 
----
+
 
 ### 2. Downloading Proton
 
@@ -74,7 +74,7 @@ proton-cli pull
 
 This command automatically downloads the **latest GE-Proton release** and sets it as the default Proton version.
 
----
+
 
 ### 3. Running Executable Files
 
@@ -91,7 +91,7 @@ This will:
 
 *Note:* The first `.exe` you run is often the installer. After installation, use `run-app` to find and launch the main executable.
 
----
+
 
 ### 4. Running Installed Applications
 
@@ -108,7 +108,7 @@ This lets you:
 
 You can also create a **desktop shortcut** during this process — simply choose a name when prompted, and a `.desktop` file will be generated automatically.
 
----
+
 
 ### 5. Help
 
@@ -118,13 +118,13 @@ For full command reference:
 proton-cli -h
 ```
 
----
+
 
 ## The Software’s Origin
 
 *(Section to be completed by the author.)*
 
----
+
 
 ## The Future of proton-cli
 
