@@ -3,6 +3,7 @@ import os
 import sys
 import argparse
 import json
+import re
 import subprocess
 import urllib.request
 import tarfile
@@ -16,6 +17,10 @@ class Colors:
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
+
+VERSION = "1.2"
+
+UPDATE_URL = "https://raw.githubusercontent.com/hhadi34/proton-cli/main/proton_cli.py"
 
 BASE_DIR = Path.home() / ".proton-cli"
 CONFIG_FILE = BASE_DIR / "config.json"
@@ -414,7 +419,7 @@ def run_installed_app(args):
         
             script_path = Path(__file__).resolve()
             
-            # Prepare Exec command with variables
+            
             base_cmd = f"{sys.executable} \"{script_path}\" run \"{selected_exe}\""
             
             shortcut_wrappers = []
@@ -614,6 +619,87 @@ def run_taskmgr():
     except Exception as e:
         print(f"{Colors.FAIL}[ERROR]{Colors.ENDC} Execution error: {e}")
 
+def update_self():
+    print(f"{Colors.HEADER}--- Checking for Updates ---{Colors.ENDC}")
+    try:
+        req = urllib.request.Request(UPDATE_URL, headers={'User-Agent': 'proton-cli'})
+        with urllib.request.urlopen(req) as response:
+            remote_code = response.read().decode('utf-8')
+        
+        match = re.search(r'VERSION\s*=\s*[\'"]([^\'"]+)[\'"]', remote_code)
+        if not match:
+            print(f"{Colors.FAIL}[ERROR]{Colors.ENDC} Could not determine remote version.")
+            return
+
+        remote_version = match.group(1)
+        
+        if remote_version == VERSION:
+            print(f"{Colors.OKGREEN}You are already using the latest version ({VERSION}).{Colors.ENDC}")
+            return
+            
+        print(f"{Colors.OKBLUE}New version found: {remote_version} (Current: {VERSION}){Colors.ENDC}")
+        
+        if not os.access(__file__, os.W_OK):
+            print(f"{Colors.FAIL}[PERMISSION DENIED]{Colors.ENDC}")
+            print(f"{Colors.WARNING}You need root privileges to update.{Colors.ENDC}")
+            print(f"Please run: {Colors.OKGREEN}sudo proton-cli update{Colors.ENDC}")
+            return
+
+        choice = input(f"{Colors.WARNING}Do you want to update? (Y/n): {Colors.ENDC}")
+        if choice.lower() in ["", "y", "yes"]:
+            with open(__file__, 'w') as f:
+                f.write(remote_code)
+            print(f"{Colors.OKGREEN}[SUCCESS]{Colors.ENDC} Updated to version {remote_version}.")
+            print("Please restart the application.")
+        else:
+            print("Update cancelled.")
+
+    except Exception as e:
+        print(f"{Colors.FAIL}[ERROR]{Colors.ENDC} Failed to check for updates: {e}")
+
+def run_uninstaller():
+    proton_path = load_config()
+    if not proton_path or not proton_path.exists():
+        print(f"{Colors.FAIL}[ERROR]{Colors.ENDC} Proton not found. Please use 'check' command first.")
+        return
+
+    if not PREFIXES_DIR.exists():
+        print(f"{Colors.WARNING}[WARNING]{Colors.ENDC} No prefixes found.")
+        return
+
+    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
+    if not prefixes:
+        print(f"{Colors.WARNING}[WARNING]{Colors.ENDC} No prefixes found.")
+        return
+
+    prefixes.sort(key=lambda x: x.name)
+    print(f"\n{Colors.OKBLUE}Select Prefix to Run Uninstaller:{Colors.ENDC}")
+    for i, p in enumerate(prefixes):
+        print(f" [{i+1}] {p.name}")
+
+    while True:
+        try:
+            sel = input(f"\n{Colors.WARNING}Select Prefix (Number): {Colors.ENDC}")
+            idx = int(sel) - 1
+            if 0 <= idx < len(prefixes):
+                selected_prefix = prefixes[idx]
+                break
+            print(f"{Colors.FAIL}Invalid selection.{Colors.ENDC}")
+        except ValueError:
+            print(f"{Colors.FAIL}Please enter a number.{Colors.ENDC}")
+
+    env = os.environ.copy()
+    env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
+    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+    
+    cmd = [str(proton_path / "proton"), "run", "uninstaller"]
+    
+    try:
+        print(f"{Colors.OKBLUE}Starting Uninstaller...{Colors.ENDC}")
+        subprocess.run(cmd, env=env)
+    except Exception as e:
+        print(f"{Colors.FAIL}[ERROR]{Colors.ENDC} Execution error: {e}")
+
 def delete_prefix():
     if not PREFIXES_DIR.exists():
         print(f"{Colors.WARNING}[WARNING]{Colors.ENDC} No prefixes found.")
@@ -696,7 +782,7 @@ def delete_proton():
             print(f"{Colors.FAIL}Please enter a number.{Colors.ENDC}")
 
 def print_help_table():
-    print(f"\n{Colors.HEADER}=== Proton-CLI Help Menu ==={Colors.ENDC}")
+    print(f"\n{Colors.HEADER}=== Proton-CLI Help Menu (v{VERSION}) ==={Colors.ENDC}")
     print(f"{Colors.OKBLUE}{'Command':<25} {'Description':<55}{Colors.ENDC}")
     print("-" * 80)
     commands = [
@@ -707,9 +793,11 @@ def print_help_table():
         ("winecfg", "Open Wine configuration for a prefix"),
         ("regedit <file>", "Apply a .reg file to a prefix"),
         ("taskmgr", "Open Task Manager for a prefix"),
+        ("uninstaller", "Open Add/Remove Programs for a prefix"),
         ("prefix-delete", "Delete an existing Wine prefix"),
         ("run <exe> [args]", "Run an .exe file"),
-        ("run-app [args]", "Find and run an installed application inside a prefix")
+        ("run-app [args]", "Find and run an installed application inside a prefix"),
+        ("update", "Update proton-cli to the latest version")
     ]
     for cmd, desc in commands:
         print(f"{Colors.OKGREEN}{cmd:<25}{Colors.ENDC} {desc}")
@@ -744,6 +832,8 @@ def main():
 
     subparsers.add_parser("taskmgr", help="Open Task Manager for a prefix")
 
+    subparsers.add_parser("uninstaller", help="Open Add/Remove Programs for a prefix")
+
     subparsers.add_parser("prefix-delete", help="Delete an existing Wine prefix")
 
     run_parser = subparsers.add_parser("run", help="Run an .exe file")
@@ -752,6 +842,8 @@ def main():
 
     run_app_parser = subparsers.add_parser("run-app", help="Find and run an installed application inside a prefix")
     run_app_parser.add_argument("args", nargs=argparse.REMAINDER, help="Arguments to pass to the application")
+
+    subparsers.add_parser("update", help="Update proton-cli to the latest version")
 
     args = parser.parse_args()
 
@@ -816,6 +908,8 @@ def main():
         run_regedit(args.reg_file)
     elif args.command == "taskmgr":
         run_taskmgr()
+    elif args.command == "uninstaller":
+        run_uninstaller()
     elif args.command == "prefix-delete":
         delete_prefix()
     elif args.command == "proton-delete":
@@ -824,6 +918,8 @@ def main():
         run_executable(args.exe, args.args)
     elif args.command == "run-app":
         run_installed_app(args.args)
+    elif args.command == "update":
+        update_self()
     else:
         parser.print_help()
 

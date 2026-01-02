@@ -1,6 +1,1 @@
-__pycache__/
-*.pyc
-deb_package/
-*.deb
-.DS_Store
-*.log
+build_deb.sh
