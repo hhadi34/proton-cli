@@ -20,7 +20,7 @@ class Colors:
     GRAY = '\033[38;5;240m'         
     ENDC = '\033[0m'
 
-VERSION = "1.3"
+VERSION = "1.4"
 
 UPDATE_URL = "https://raw.githubusercontent.com/hhadi34/proton-cli/main/proton_cli.py"
 
@@ -955,7 +955,7 @@ def print_help_table():
         ("check", "Scan and configure Proton versions on the system"),
         ("pull", "Download the latest GE-Proton version"),
         ("proton-delete", "Delete downloaded Proton versions"),
-        ("prefix-make <name>", "Create a new Wine prefix"),
+        ("prefix-make", "Create a new Wine prefix"),
         ("winecfg", "Open Wine configuration for a prefix"),
         ("regedit <file>", "Apply a .reg file to a prefix"),
         ("regsvr32 [args]", "Register/Unregister DLLs in a prefix"),
