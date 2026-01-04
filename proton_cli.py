@@ -8,15 +8,16 @@ import subprocess
 import urllib.request
 import tarfile
 import shutil
+import shlex
 from pathlib import Path
 
 class Colors:
-    HEADER = '\033[1;38;5;46m'      # Neon Green
-    OKBLUE = '\033[38;5;49m'        # Spring Green
-    OKGREEN = '\033[38;5;118m'      # Chartreuse
-    WARNING = '\033[38;5;226m'      # Yellow
-    FAIL = '\033[38;5;196m'         # Red
-    GRAY = '\033[38;5;240m'         # Gray
+    HEADER = '\033[1;38;5;46m'    
+    OKBLUE = '\033[38;5;49m'        
+    OKGREEN = '\033[38;5;118m'    
+    WARNING = '\033[38;5;226m'     
+    FAIL = '\033[38;5;196m'         
+    GRAY = '\033[38;5;240m'         
     ENDC = '\033[0m'
 
 VERSION = "1.3"
@@ -170,6 +171,12 @@ def download_ge_proton():
             total_files = len(members)
             for i, member in enumerate(members):
                 tar.extract(member, path=VERSIONS_DIR)
+                
+                if member.name.startswith("/") or ".." in member.name:
+                    continue
+                
+                
+                tar.extract(member, path=VERSIONS_DIR, set_attrs=False)
                 percent = int((i + 1) * 100 / total_files)
                 bar_length = 40
                 filled_length = int(bar_length * percent // 100)
@@ -212,7 +219,17 @@ def create_prefix(name):
     print(f"  Using Proton: {Colors.OKBLUE}{proton_path.name}{Colors.ENDC}")
     print(f"  Location: {Colors.GRAY}{prefix_path}{Colors.ENDC}")
     
-    print(f"{Colors.OKGREEN}✔ Prefix directory created.{Colors.ENDC}")
+    print(f"{Colors.OKBLUE}➜ Initializing Wine Prefix (this may take a while)...{Colors.ENDC}")
+
+    env = os.environ.copy()
+    env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
+    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+
+    try:
+        subprocess.run([str(proton_path / "proton"), "run", "wineboot"], env=env, check=True)
+        print(f"{Colors.OKGREEN}✔ Prefix initialized successfully.{Colors.ENDC}")
+    except Exception as e:
+        print(f"{Colors.FAIL}✖ Failed to initialize prefix: {e}{Colors.ENDC}")
 
 def run_executable(exe_path, args):
     proton_path = load_config()
@@ -284,7 +301,7 @@ def run_executable(exe_path, args):
     cmd = [str(proton_path / "proton"), "run", str(exe_file)] + args
     wrappers = []
     if user_opts:
-        parts = user_opts.split()
+        parts = shlex.split(user_opts)
         for part in parts:
             if '=' in part:
                 k, v = part.split('=', 1)
@@ -451,7 +468,7 @@ def run_installed_app(args):
         shortcut_wrappers = []
         shortcut_envs = []
         if user_opts:
-            for part in user_opts.split():
+            for part in shlex.split(user_opts):
                 if '=' in part:
                     shortcut_envs.append(part)
                 else:
@@ -492,7 +509,7 @@ Categories=Utility;
     cmd = [str(proton_path / "proton"), "run", str(selected_exe)] + args
     wrappers = []
     if user_opts:
-        parts = user_opts.split()
+        parts = shlex.split(user_opts)
         for part in parts:
             if '=' in part:
                 k, v = part.split('=', 1)
@@ -596,6 +613,75 @@ def run_regedit(reg_file_path):
     print(f"  File: {reg_file.name}")
     
     cmd = [str(proton_path / "proton"), "run", "regedit", str(reg_file)]
+    
+    try:
+        subprocess.run(cmd, env=env)
+    except Exception as e:
+        print(f"{Colors.FAIL}✖ Execution error: {e}{Colors.ENDC}")
+
+def run_regsvr32(args):
+    proton_path = load_config()
+    if not proton_path or not proton_path.exists():
+        print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
+        return
+
+    if not PREFIXES_DIR.exists():
+        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+        return
+
+    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
+    if not prefixes:
+        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+        return
+
+    prefixes.sort(key=lambda x: x.name)
+    print(f"\n{Colors.HEADER}Select Prefix to Run regsvr32:{Colors.ENDC}")
+    for i, p in enumerate(prefixes):
+        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
+
+    while True:
+        try:
+            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
+            idx = int(sel) - 1
+            if 0 <= idx < len(prefixes):
+                selected_prefix = prefixes[idx]
+                break
+            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
+        except ValueError:
+            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
+
+    env = os.environ.copy()
+    env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
+    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+    
+    print(f"{Colors.HEADER}➜ Running regsvr32{Colors.ENDC}")
+
+    
+    final_args = []
+    for arg in args:
+        path = Path(arg)
+        if path.exists() and path.is_file() and path.suffix.lower() == ".dll":
+            print(f"{Colors.OKBLUE}ℹ Detected local DLL file: {path.name}{Colors.ENDC}")
+            
+            
+            system32 = selected_prefix / "pfx" / "drive_c" / "windows" / "system32"
+            if not system32.exists():
+                system32 = selected_prefix / "drive_c" / "windows" / "system32"
+            
+            dest_path = system32 / path.name
+            try:
+                print(f"{Colors.GRAY}➜ Copying to System32...{Colors.ENDC}")
+                shutil.copy2(path, dest_path)
+                
+                final_args.append(path.name)
+            except Exception as e:
+                print(f"{Colors.FAIL}✖ Failed to copy DLL: {e}{Colors.ENDC}")
+                return
+        else:
+            final_args.append(arg)
+    
+    cmd = [str(proton_path / "proton"), "run", "regsvr32"] + args
+    cmd = [str(proton_path / "proton"), "run", "regsvr32"] + final_args
     
     try:
         subprocess.run(cmd, env=env)
@@ -726,6 +812,42 @@ def run_uninstaller():
     except Exception as e:
         print(f"{Colors.FAIL}✖ Execution error: {e}{Colors.ENDC}")
 
+def open_prefix_drive():
+    if not PREFIXES_DIR.exists():
+        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+        return
+
+    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
+    if not prefixes:
+        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+        return
+
+    prefixes.sort(key=lambda x: x.name)
+    print(f"\n{Colors.HEADER}Select Prefix to Open:{Colors.ENDC}")
+    for i, p in enumerate(prefixes):
+        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
+
+    while True:
+        try:
+            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
+            idx = int(sel) - 1
+            if 0 <= idx < len(prefixes):
+                selected_prefix = prefixes[idx]
+                break
+            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
+        except ValueError:
+            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
+
+    drive_c = selected_prefix / "pfx" / "drive_c"
+    if not drive_c.exists():
+        drive_c = selected_prefix / "drive_c"
+    
+    print(f"{Colors.OKBLUE}➜ Opening: {drive_c}{Colors.ENDC}")
+    try:
+        subprocess.run(["xdg-open", str(drive_c)])
+    except Exception as e:
+        print(f"{Colors.FAIL}✖ Failed to open file manager: {e}{Colors.ENDC}")
+
 def delete_prefix():
     if not PREFIXES_DIR.exists():
         print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
@@ -836,8 +958,10 @@ def print_help_table():
         ("prefix-make <name>", "Create a new Wine prefix"),
         ("winecfg", "Open Wine configuration for a prefix"),
         ("regedit <file>", "Apply a .reg file to a prefix"),
+        ("regsvr32 [args]", "Register/Unregister DLLs in a prefix"),
         ("taskmgr", "Open Task Manager for a prefix"),
         ("uninstaller", "Open Add/Remove Programs for a prefix"),
+        ("open-prefix", "Open the drive_c folder of a prefix"),
         ("prefix-delete", "Delete an existing Wine prefix"),
         ("run <exe> [args]", "Run an .exe file"),
         ("run-app [args]", "Find and run an installed application inside a prefix"),
@@ -874,9 +998,14 @@ def main():
     regedit_parser = subparsers.add_parser("regedit", help="Apply a .reg file to a prefix")
     regedit_parser.add_argument("reg_file", help="Path to the .reg file")
 
+    regsvr_parser = subparsers.add_parser("regsvr32", help="Register/Unregister DLLs in a prefix")
+    regsvr_parser.add_argument("args", nargs=argparse.REMAINDER, help="Arguments for regsvr32")
+
     subparsers.add_parser("taskmgr", help="Open Task Manager for a prefix")
 
     subparsers.add_parser("uninstaller", help="Open Add/Remove Programs for a prefix")
+
+    subparsers.add_parser("open-prefix", help="Open the drive_c folder of a prefix")
 
     subparsers.add_parser("prefix-delete", help="Delete an existing Wine prefix")
 
@@ -956,10 +1085,14 @@ def main():
         run_winecfg()
     elif args.command == "regedit":
         run_regedit(args.reg_file)
+    elif args.command == "regsvr32":
+        run_regsvr32(args.args)
     elif args.command == "taskmgr":
         run_taskmgr()
     elif args.command == "uninstaller":
         run_uninstaller()
+    elif args.command == "open-prefix":
+        open_prefix_drive()
     elif args.command == "prefix-delete":
         delete_prefix()
     elif args.command == "proton-delete":
