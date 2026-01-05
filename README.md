@@ -1,6 +1,6 @@
 # proton-cli
 
-**proton-cli** is a lightweight command-line interface that makes it easier to run Windows software on Linux using **Proton** or **GE-Proton**.
+**proton-cli** is a lightweight command-line interface that makes it easier to run Windows software on Linux using **Proton** or **GE-Proton** while also using steam runtime environment. (optional)
 
 It automates common setup tasks such as locating your Proton installation, managing prefixes, and running executables with minimal hassle — all from the terminal.
 
@@ -112,7 +112,7 @@ proton-cli -h
 
 Here’s what’s planned for upcoming releases:
 
-- ARM support for Steam Frame and similar devices  
+- ARM support for Steam Frame and similar devices(Scrapped)  
 - Distribution packages for Fedora, Arch, and more  
-- Advanced options for power users  
-- Deeper integration with other software (beyond environment variables)  
+- Advanced options for power users (done)   
+- Deeper integration with other software (beyond environment variables) (basically the most important one steam runtime is integrated)  
