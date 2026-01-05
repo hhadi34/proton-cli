@@ -112,7 +112,7 @@ proton-cli -h
 
 Here’s what’s planned for upcoming releases:
 
-- ARM support for Steam Deck and similar devices  
+- ARM support for Steam Frame and similar devices  
 - Distribution packages for Fedora, Arch, and more  
 - Advanced options for power users  
 - Deeper integration with other software (beyond environment variables)  
