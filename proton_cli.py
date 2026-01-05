@@ -20,7 +20,7 @@ class Colors:
     GRAY = '\033[38;5;240m'         
     ENDC = '\033[0m'
 
-VERSION = "1.4"
+VERSION = "1.4.1"
 
 UPDATE_URL = "https://raw.githubusercontent.com/hhadi34/proton-cli/main/proton_cli.py"
 
@@ -93,12 +93,24 @@ def find_existing_protons():
     print(f"\n{Colors.FAIL}✖ No installed Proton version found on the system.{Colors.ENDC}")
     return None
 
-def save_config(proton_path):
+def update_config(**kwargs):
     try:
         if not BASE_DIR.exists():
             BASE_DIR.mkdir(parents=True, exist_ok=True)
             
-        data = {"proton_path": str(proton_path) if proton_path else None}
+        data = {}
+        if CONFIG_FILE.exists():
+            try:
+                with open(CONFIG_FILE, 'r') as f:
+                    data = json.load(f)
+            except:
+                pass
+        
+        for k, v in kwargs.items():
+            if isinstance(v, Path):
+                data[k] = str(v)
+            else:
+                data[k] = v
         
         with open(CONFIG_FILE, 'w') as f:
             json.dump(data, f, indent=4)
@@ -117,6 +129,35 @@ def load_config():
         except Exception:
             return None
     return None
+
+def get_base_cmd(proton_path):
+    base = [str(proton_path / "proton")]
+    if shutil.which("steam-run"):
+        base.insert(0, "steam-run")
+        return base
+
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                data = json.load(f)
+                cached = data.get("steam_runtime_path")
+                if cached and Path(cached).exists():
+                    base.insert(0, str(cached))
+                    return base
+        except Exception:
+            pass
+
+    steam_runtime_paths = [
+        Path.home() / ".steam/steam/ubuntu12_32/steam-runtime/run.sh",
+        Path.home() / ".local/share/Steam/ubuntu12_32/steam-runtime/run.sh",
+        Path.home() / ".steam/root/ubuntu12_32/steam-runtime/run.sh",
+    ]
+    for script in steam_runtime_paths:
+        if script.exists():
+            update_config(steam_runtime_path=script)
+            base.insert(0, str(script))
+            break
+    return base
 
 def download_ge_proton():
     print(f"{Colors.HEADER}➜ Starting GE-Proton Download...{Colors.ENDC}")
@@ -226,7 +267,7 @@ def create_prefix(name):
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
 
     try:
-        subprocess.run([str(proton_path / "proton"), "run", "wineboot"], env=env, check=True)
+        subprocess.run(get_base_cmd(proton_path) + ["run", "wineboot"], env=env, check=True)
         print(f"{Colors.OKGREEN}✔ Prefix initialized successfully.{Colors.ENDC}")
     except Exception as e:
         print(f"{Colors.FAIL}✖ Failed to initialize prefix: {e}{Colors.ENDC}")
@@ -286,6 +327,9 @@ def run_executable(exe_path, args):
     print(f"{Colors.HEADER}➜ Starting Application{Colors.ENDC}")
     print(f"  Exe: {Colors.OKBLUE}{exe_file.name}{Colors.ENDC}")
     print(f"  Prefix: {Colors.OKBLUE}{selected_prefix.name}{Colors.ENDC}")
+    base_cmd = get_base_cmd(proton_path)
+    runtime_status = f"{Colors.OKGREEN}Steam Runtime{Colors.ENDC}" if len(base_cmd) > 1 else f"{Colors.WARNING}System Native{Colors.ENDC}"
+    print(f"  Runtime: {runtime_status}")
 
     print(f"\n{Colors.HEADER}Launch Options:{Colors.ENDC}")
     if sys.stdin.isatty():
@@ -298,7 +342,6 @@ def run_executable(exe_path, args):
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
     
-    cmd = [str(proton_path / "proton"), "run", str(exe_file)] + args
     wrappers = []
     if user_opts:
         parts = shlex.split(user_opts)
@@ -309,7 +352,7 @@ def run_executable(exe_path, args):
             else:
                 wrappers.append(part)
 
-    cmd = wrappers + [str(proton_path / "proton"), "run", str(exe_file)] + args
+    cmd = wrappers + get_base_cmd(proton_path) + ["run", str(exe_file)] + args
     
     try:
         subprocess.run(cmd, env=env)
@@ -501,12 +544,14 @@ Categories=Utility;
 
     print(f"{Colors.HEADER}➜ Starting Application{Colors.ENDC}")
     print(f"  Exe: {Colors.OKBLUE}{selected_exe}{Colors.ENDC}")
+    base_cmd = get_base_cmd(proton_path)
+    runtime_status = f"{Colors.OKGREEN}Steam Runtime{Colors.ENDC}" if len(base_cmd) > 1 else f"{Colors.WARNING}System Native{Colors.ENDC}"
+    print(f"  Runtime: {runtime_status}")
 
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
     
-    cmd = [str(proton_path / "proton"), "run", str(selected_exe)] + args
     wrappers = []
     if user_opts:
         parts = shlex.split(user_opts)
@@ -517,7 +562,7 @@ Categories=Utility;
             else:
                 wrappers.append(part)
 
-    cmd = wrappers + [str(proton_path / "proton"), "run", str(selected_exe)] + args
+    cmd = wrappers + get_base_cmd(proton_path) + ["run", str(selected_exe)] + args
     
     try:
         subprocess.run(cmd, env=env)
@@ -561,7 +606,7 @@ def run_winecfg():
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
     
-    cmd = [str(proton_path / "proton"), "run", "winecfg"]
+    cmd = get_base_cmd(proton_path) + ["run", "winecfg"]
     
     try:
         print(f"{Colors.OKBLUE}➜ Starting Wine configuration...{Colors.ENDC}")
@@ -612,7 +657,7 @@ def run_regedit(reg_file_path):
     print(f"{Colors.HEADER}➜ Applying Registry File{Colors.ENDC}")
     print(f"  File: {reg_file.name}")
     
-    cmd = [str(proton_path / "proton"), "run", "regedit", str(reg_file)]
+    cmd = get_base_cmd(proton_path) + ["run", "regedit", str(reg_file)]
     
     try:
         subprocess.run(cmd, env=env)
@@ -680,8 +725,7 @@ def run_regsvr32(args):
         else:
             final_args.append(arg)
     
-    cmd = [str(proton_path / "proton"), "run", "regsvr32"] + args
-    cmd = [str(proton_path / "proton"), "run", "regsvr32"] + final_args
+    cmd = get_base_cmd(proton_path) + ["run", "regsvr32"] + final_args
     
     try:
         subprocess.run(cmd, env=env)
@@ -723,7 +767,7 @@ def run_taskmgr():
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
     
-    cmd = [str(proton_path / "proton"), "run", "taskmgr"]
+    cmd = get_base_cmd(proton_path) + ["run", "taskmgr"]
     
     try:
         print(f"{Colors.OKBLUE}➜ Starting Task Manager...{Colors.ENDC}")
@@ -804,7 +848,7 @@ def run_uninstaller():
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
     
-    cmd = [str(proton_path / "proton"), "run", "uninstaller"]
+    cmd = get_base_cmd(proton_path) + ["run", "uninstaller"]
     
     try:
         print(f"{Colors.OKBLUE}➜ Starting Uninstaller...{Colors.ENDC}")
@@ -928,7 +972,7 @@ def delete_proton():
                         current_path = load_config()
                         if current_path and current_path.resolve() == selected.resolve():
                             print(f"{Colors.WARNING}⚠ Deleted version was set as default. Clearing configuration...{Colors.ENDC}")
-                            save_config(None)
+                            update_config(proton_path=None)
                     except Exception as e:
                         print(f"{Colors.FAIL}✖ Deletion failed: {e}{Colors.ENDC}")
                 else:
@@ -1025,6 +1069,36 @@ def main():
         return
 
     if args.command == "check":
+        if shutil.which("steam-run"):
+            print(f"{Colors.OKBLUE}ℹ Steam Runtime (steam-run) is available and will be used.{Colors.ENDC}")
+        else:
+            runtime_found = False
+            if CONFIG_FILE.exists():
+                try:
+                    with open(CONFIG_FILE, 'r') as f:
+                        data = json.load(f)
+                        cached = data.get("steam_runtime_path")
+                        if cached and Path(cached).exists():
+                            print(f"{Colors.OKBLUE}ℹ Steam Runtime (cached): {cached}{Colors.ENDC}")
+                            runtime_found = True
+                except Exception:
+                    pass
+
+            if not runtime_found:
+                steam_runtime_paths = [
+                    Path.home() / ".steam/steam/ubuntu12_32/steam-runtime/run.sh",
+                    Path.home() / ".local/share/Steam/ubuntu12_32/steam-runtime/run.sh",
+                    Path.home() / ".steam/root/ubuntu12_32/steam-runtime/run.sh",
+                ]
+                for script in steam_runtime_paths:
+                    if script.exists():
+                        print(f"{Colors.OKBLUE}ℹ Steam Runtime (internal script) found and will be used.{Colors.ENDC}")
+                        update_config(steam_runtime_path=script)
+                        runtime_found = True
+                        break
+                if not runtime_found:
+                    print(f"{Colors.GRAY}ℹ Steam Runtime not found. Using system libraries.{Colors.ENDC}")
+
         proton_path = find_existing_protons()
         
         if not proton_path:
@@ -1048,7 +1122,7 @@ def main():
                 else:
                     print("Operation cancelled.")
 
-        save_config(proton_path)
+        update_config(proton_path=proton_path)
         if proton_path:
             print(f"Path to use: {proton_path}")
     elif args.command == "pull":
@@ -1072,7 +1146,7 @@ def main():
                     
                     print("\nUpdating configuration...")
                     proton_path = find_existing_protons()
-                    save_config(proton_path)
+                    update_config(proton_path=proton_path)
     elif args.command == "prefix-make":
         name = args.name
         if not name:
