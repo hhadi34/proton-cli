@@ -20,7 +20,7 @@ class Colors:
     GRAY = '\033[38;5;240m'         
     ENDC = '\033[0m'
 
-VERSION = "1.4.1"
+VERSION = "1.4.2"
 
 UPDATE_URL = "https://raw.githubusercontent.com/hhadi34/proton-cli/main/proton_cli.py"
 
@@ -272,7 +272,42 @@ def create_prefix(name):
     except Exception as e:
         print(f"{Colors.FAIL}✖ Failed to initialize prefix: {e}{Colors.ENDC}")
 
-def run_executable(exe_path, args):
+def select_prefix_interactive(prompt_text="Select Prefix"):
+    """Helper function to list and select a prefix interactively."""
+    if not PREFIXES_DIR.exists():
+        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+        return None
+
+    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
+    if not prefixes:
+        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+        return None
+
+    prefixes.sort(key=lambda x: x.name)
+    print(f"\n{Colors.HEADER}{prompt_text}:{Colors.ENDC}")
+    for i, p in enumerate(prefixes):
+        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
+
+    if len(prefixes) == 1:
+        print(f"{Colors.GRAY}Single prefix found, selecting automatically: {prefixes[0].name}{Colors.ENDC}")
+        return prefixes[0]
+
+    while True:
+        try:
+            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
+            idx = int(sel) - 1
+            if 0 <= idx < len(prefixes):
+                return prefixes[idx]
+            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
+        except ValueError:
+            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
+
+def desktop_quote(arg):
+    """Escape spaces and special characters with backslash for shell compatibility."""
+    # Used for generating .desktop Exec lines that run via sh -c
+    return re.sub(r'([ \t\n"\'\\`$!*&|;<>()?#])', r'\\\1', arg)
+
+def run_executable(exe_path, args, prefix_name=None):
     proton_path = load_config()
     if not proton_path or not proton_path.exists():
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
@@ -286,43 +321,52 @@ def run_executable(exe_path, args):
     if not PREFIXES_DIR.exists():
         PREFIXES_DIR.mkdir(parents=True, exist_ok=True)
 
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        print(f"{Colors.OKBLUE}➜ Automatically creating a new prefix...{Colors.ENDC}")
-        
-        prefix_name = input(f"{Colors.OKGREEN}Enter name for new prefix [Default: default]: {Colors.ENDC}").strip()
-        if not prefix_name:
-            prefix_name = "default"
-            
-        create_prefix(prefix_name)
-        prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-        
-        if not prefixes:
+    selected_prefix = None
+    if prefix_name:
+        selected_prefix = PREFIXES_DIR / prefix_name
+        if not selected_prefix.is_dir():
+            print(f"{Colors.FAIL}✖ Prefix '{prefix_name}' not found at {selected_prefix}{Colors.ENDC}")
+            return
+    else:
+        if not sys.stdin.isatty():
+            print(f"{Colors.FAIL}✖ No prefix specified and not in an interactive terminal. Use --prefix <name>.{Colors.ENDC}")
             return
 
-    prefixes.sort(key=lambda x: x.name)
-    selected_prefix = None
+        prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
+        if not prefixes:
+            print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+            print(f"{Colors.OKBLUE}➜ Automatically creating a new prefix...{Colors.ENDC}")
+            
+            prefix_name_input = input(f"{Colors.OKGREEN}Enter name for new prefix [Default: default]: {Colors.ENDC}").strip()
+            if not prefix_name_input:
+                prefix_name_input = "default"
+            create_prefix(prefix_name_input)
+            prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
+            if not prefixes: return
 
-    print(f"\n{Colors.HEADER}Available Prefixes:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
+        prefixes.sort(key=lambda x: x.name)
+        print(f"\n{Colors.HEADER}Available Prefixes:{Colors.ENDC}")
+        for i, p in enumerate(prefixes):
+            print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
 
-    if len(prefixes) == 1:
-        print(f"{Colors.GRAY}Single prefix found, selecting automatically: {prefixes[0].name}{Colors.ENDC}")
-        selected_prefix = prefixes[0]
-    else:
-        while True:
-            try:
-                sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-                idx = int(sel) - 1
-                if 0 <= idx < len(prefixes):
-                    selected_prefix = prefixes[idx]
-                    break
-                print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-            except ValueError:
-                print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
+        if len(prefixes) == 1:
+            print(f"{Colors.GRAY}Single prefix found, selecting automatically: {prefixes[0].name}{Colors.ENDC}")
+            selected_prefix = prefixes[0]
+        else:
+            while True:
+                try:
+                    sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
+                    idx = int(sel) - 1
+                    if 0 <= idx < len(prefixes):
+                        selected_prefix = prefixes[idx]
+                        break
+                    print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
+                except ValueError:
+                    print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
+
+    if not selected_prefix:
+        print(f"{Colors.FAIL}✖ Could not determine a prefix to use.{Colors.ENDC}")
+        return
 
     print(f"{Colors.HEADER}➜ Starting Application{Colors.ENDC}")
     print(f"  Exe: {Colors.OKBLUE}{exe_file.name}{Colors.ENDC}")
@@ -367,32 +411,9 @@ def run_installed_app(args):
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
 
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    selected_prefix = None
-
-    print(f"\n{Colors.HEADER}Select Prefix:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     print(f"{Colors.HEADER}➜ Scanning Applications...{Colors.ENDC}")
     drive_c = selected_prefix / "pfx" / "drive_c"
@@ -504,10 +525,17 @@ def run_installed_app(args):
             desktop_file_path = applications_dir / desktop_file_name
     
         script_path = Path(__file__).resolve()
-        
-        
-        base_cmd = f"{sys.executable} \"{script_path}\" run \"{selected_exe}\""
-        
+
+        # Base command to run the selected app with the correct prefix
+        base_cmd_parts = [
+            sys.executable,
+            str(script_path),
+            "run",
+            "--prefix",
+            selected_prefix.name,
+            str(selected_exe)
+        ]
+
         shortcut_wrappers = []
         shortcut_envs = []
         if user_opts:
@@ -516,9 +544,10 @@ def run_installed_app(args):
                     shortcut_envs.append(part)
                 else:
                     shortcut_wrappers.append(part)
-        
-        exec_cmd = f"{' '.join(shortcut_wrappers)} env {' '.join(shortcut_envs)} {base_cmd}".strip().replace("  ", " ")
-    
+
+        final_cmd_parts = shortcut_wrappers + (["env"] + shortcut_envs if shortcut_envs else []) + base_cmd_parts
+        exec_cmd = " ".join(desktop_quote(part) for part in final_cmd_parts)
+
         content = f"""[Desktop Entry]
 Name={shortcut_name}
 Comment=Launched via Proton-CLI
@@ -577,30 +606,9 @@ def run_winecfg():
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
 
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix to Configure")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Configure:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
@@ -625,30 +633,9 @@ def run_regedit(reg_file_path):
         print(f"{Colors.FAIL}✖ .reg file not found: {reg_file_path}{Colors.ENDC}")
         return
 
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix to Apply Registry File")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Apply Registry File:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
@@ -670,30 +657,9 @@ def run_regsvr32(args):
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
 
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix to Run regsvr32")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Run regsvr32:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
@@ -738,30 +704,9 @@ def run_taskmgr():
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
 
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix to Run Task Manager")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Run Task Manager:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
@@ -819,30 +764,9 @@ def run_uninstaller():
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
 
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix to Run Uninstaller")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Run Uninstaller:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
@@ -857,30 +781,9 @@ def run_uninstaller():
         print(f"{Colors.FAIL}✖ Execution error: {e}{Colors.ENDC}")
 
 def open_prefix_drive():
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected_prefix = select_prefix_interactive("Select Prefix to Open")
+    if not selected_prefix:
         return
-
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Open:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
-        try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number): {Colors.ENDC}")
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected_prefix = prefixes[idx]
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
     drive_c = selected_prefix / "pfx" / "drive_c"
     if not drive_c.exists():
@@ -893,42 +796,19 @@ def open_prefix_drive():
         print(f"{Colors.FAIL}✖ Failed to open file manager: {e}{Colors.ENDC}")
 
 def delete_prefix():
-    if not PREFIXES_DIR.exists():
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
+    selected = select_prefix_interactive("Select Prefix to Delete")
+    if not selected:
         return
 
-    prefixes = [p for p in PREFIXES_DIR.iterdir() if p.is_dir()]
-    if not prefixes:
-        print(f"{Colors.WARNING}⚠ No prefixes found.{Colors.ENDC}")
-        return
-
-    prefixes.sort(key=lambda x: x.name)
-    print(f"\n{Colors.HEADER}Select Prefix to Delete:{Colors.ENDC}")
-    for i, p in enumerate(prefixes):
-        print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {p.name}")
-
-    while True:
+    confirm = input(f"{Colors.FAIL}⚠ '{selected.name}' prefix will be deleted. Are you sure? (Y/n): {Colors.ENDC}")
+    if confirm.lower() in ["y", "yes"]:
         try:
-            sel = input(f"\n{Colors.OKGREEN}Select Prefix (Number) [Enter to Cancel]: {Colors.ENDC}")
-            if not sel:
-                print("Operation cancelled.")
-                return
-            idx = int(sel) - 1
-            if 0 <= idx < len(prefixes):
-                selected = prefixes[idx]
-                confirm = input(f"{Colors.FAIL}⚠ '{selected.name}' prefix will be deleted. Are you sure? (Y/n): {Colors.ENDC}")
-                if confirm.lower() in ["y", "yes"]:
-                    try:
-                        shutil.rmtree(selected)
-                        print(f"{Colors.OKGREEN}✔ Prefix deleted.{Colors.ENDC}")
-                    except Exception as e:
-                        print(f"{Colors.FAIL}✖ Deletion failed: {e}{Colors.ENDC}")
-                else:
-                    print("Deletion cancelled.")
-                break
-            print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
-        except ValueError:
-            print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
+            shutil.rmtree(selected)
+            print(f"{Colors.OKGREEN}✔ Prefix deleted.{Colors.ENDC}")
+        except Exception as e:
+            print(f"{Colors.FAIL}✖ Deletion failed: {e}{Colors.ENDC}")
+    else:
+        print("Deletion cancelled.")
 
 def delete_proton():
     print(f"{Colors.HEADER}➜ Scanning for Proton Versions to Delete...{Colors.ENDC}")
@@ -1054,6 +934,7 @@ def main():
     subparsers.add_parser("prefix-delete", help="Delete an existing Wine prefix")
 
     run_parser = subparsers.add_parser("run", help="Run an .exe file")
+    run_parser.add_argument("--prefix", help="Name of the prefix to use")
     run_parser.add_argument("exe", help="Path to the .exe file")
     run_parser.add_argument("args", nargs=argparse.REMAINDER, help="Arguments to pass to the exe")
 
@@ -1172,7 +1053,7 @@ def main():
     elif args.command == "proton-delete":
         delete_proton()
     elif args.command == "run":
-        run_executable(args.exe, args.args)
+        run_executable(args.exe, args.args, prefix_name=args.prefix)
     elif args.command == "run-app":
         run_installed_app(args.args)
     elif args.command == "update":
