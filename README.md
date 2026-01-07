@@ -1,64 +1,58 @@
-# proton-cli
+# Proton-Cli
 
-**proton-cli** is a lightweight command-line interface that makes it easier to run Windows software on Linux using **Proton** or **GE-Proton** while also using steam runtime environment. (optional)
+**Proton-Cli** is a tool that helps you run proton outside of steam. It downloads proton, manages prefixes, runs .exe's, manages installed applications through smartlisting and a lot more i can't list! The best part about all of this is it's incredibly easy to manage for the end-users out there. 
 
-It automates common setup tasks such as locating your Proton installation, managing prefixes, and running executables with minimal hassle — all from the terminal.
+Before using this application i want to be open about how i made the app and its downsides. Firstly this project was vibecoded meaning the code was written by ai. But besides from the writing of the code, every other thing (debugging, testing, distrubuting, commiting) is maintained by me. Secondly there isn't an installation method that is distro-specific. Although many of you would prefer this, the end user might still find it difficult to install (i will try to help as much as i can in the installation segment). Lastly, steam runtime (at the time of developing) is not available. This means some performance issues or errors could happen(although unlikely for modern distros there is still a chance). Luckily i have implemented the steam runtime before (1.4.1) that's why it shouldn't be a problem.
 
-## Introduction
+*Warning:* This version of the tool is not production ready yet. Although i added a tutorial on how to install it, i did not want a full release because i wanted to take a diffirent approach on the tool instead of what i did in the 1.4.x release cycle. 
 
-Running Windows software with Proton is great — but setting up prefixes, managing versions, and launching apps can be tedious.  
-**proton-cli** simplifies this process.
-
-With a few simple commands, you can:
-- Detect and configure your existing Proton installations  
-- Download and manage GE-Proton builds  
-- Automatically create and manage prefixes  
-- Run `.exe` files seamlessly  
-- Generate desktop shortcuts for quick access  
 
 ## Installation
 
-You can install **proton-cli** in two ways:
+### 1. Download pipx and git for your distro
 
-### Option 1: Using `.deb` Package
-Download the latest `.deb` release from the [Releases](#) page and install it:
-
-```bash
-sudo dpkg -i proton-cli_<version>.deb
-```
-
-If any dependencies are missing, fix them with:
-```bash
-sudo apt --fix-broken install
-```
-
-### Option 2: Manual method
-Download the proton_cli.py and copy it to /usr/local/bin by running:
+For example for debian/ubuntu:
 
 ```bash
-sudo cp /path/to/proton_cli.py /usr/local/bin 
+sudo apt install pipx git
 ```
-Then make it an executable file by
+
+pipx is needed because it will create a contained environment for python without breaking the system packages.
+
+### 2. Clone the repository in a new directory using git
+
+Run this command:
 
 ```bash
-sudo chmod +x/usr/local/bin/proton_cli.py 
+mkdir -p ~/proton-cli
+cd ~/proton-cli
+git clone https://github.com/hhadi34/proton-cli.git
 ```
+
+This will be the building directory.
+
+### 3. Install the app
+
+Install the app by running
+
+```bash
+pipx install .
+```
+
+This command will build the app in the ~/.local/share/pipx/venvs/proton-cli/ directory.
 
 
 ## Usage
 
 ### 1. Checking Proton Installation
 
-If you already have Proton installed (via **Steam**, **Heroic**, or **Lutris**):
+If you already have Proton installed via steam, heroic or lutris, run:
 
 ```bash
 proton-cli check
 ```
 
-This command scans your system for Proton installations and selects a default version automatically.  
-If multiple Proton versions are found, you’ll be prompted to choose one.
-
-If **no installation is found**, you can manually specify the directory after running the `check` command.
+This command will scan specific directories for proton installations and save it for later use. If you installed proton in another specific directory there will be an option to manually enter it. If multiple Proton versions are found, you’ll be prompted to choose one.
 
 ### 2. Downloading Proton
 
@@ -68,22 +62,19 @@ If you don’t have Proton installed, simply run:
 proton-cli pull
 ```
 
-This command automatically downloads the **latest GE-Proton release** and sets it as the default Proton version.
+This command automatically downloads the latest GE-Proton release and sets it as the default Proton version.
 
 ### 3. Running Executable Files
 
-To run a Windows `.exe` file:
+To run a .exe file:
 
 ```bash
 proton-cli run /path/to/file.exe
 ```
 
-This will:
-- Create a new **prefix** automatically if one doesn’t exist  
-- Ask for **environment variables** if needed  
-- Launch the `.exe` file under Proton  
+This will create a new prefix automatically if one doesn’t exist and ask for environment variables if you would like one
 
-*Note:* The first `.exe` you run is often the installer. After installation, use `run-app` to find and launch the main executable.
+*Note:* The first .exe you run is often the installer. After installation, use run-app to find and launch the actual executable.
 
 ### 4. Running Installed Applications
 
@@ -93,12 +84,9 @@ To find and launch installed apps:
 proton-cli run-app
 ```
 
-This lets you:
-- Choose a prefix  
-- View a **smartlisted** set of `.exe` files (the first is usually the correct one)  
-- Customize variables before launching  
+This lists out the .exe extension files in a prefix. With the smartlisting feature usually the first few .exe is the correct one. You can also save this configurations you made by creating a .desktop(basically a shortcut). The tool will create a .desktop for you if you say yes in the terminal
 
-You can also create a **desktop shortcut** during this process — simply choose a name when prompted, and a `.desktop` file will be generated automatically.
+
 
 ### 5. Help
 
@@ -108,11 +96,6 @@ For full command reference:
 proton-cli -h
 ```
 
-## The Future of proton-cli
+## The Future of Proton-Cli
 
-Here’s what’s planned for upcoming releases:
-
-- ARM support for Steam Frame and similar devices(Scrapped)  
-- Distribution packages for Fedora, Arch, and more  
-- Advanced options for power users (done)   
-- Deeper integration with other software (beyond environment variables) (basically the most important one steam runtime is integrated)  
+I did not get a chance to try this tool in other systems or distros (i use linux mint btw) and like i said this tool doesn't have distro specific installation methods. I want to publish this through distro repos in the future. Although it is near-future steam runtime wrapper will also be added.
