@@ -3,12 +3,16 @@ import os
 import subprocess
 import shlex
 from pathlib import Path
-from .constants import Colors, BASE_DIR, PREFIXES_DIR
+from .constants import Colors, BASE_DIR, PREFIXES_DIR, RUNTIME_DIR
 from .config import load_config
 from .prefix import create_prefix
+from .core import get_proton_env
 
 def run_executable(exe_path, args, prefix_name=None, user_options=None):
-    proton_path = load_config()
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    
     if not proton_path or not proton_path.exists():
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
@@ -69,6 +73,11 @@ def run_executable(exe_path, args, prefix_name=None, user_options=None):
     print(f"  Exe: {Colors.OKBLUE}{exe_file.name}{Colors.ENDC}")
     print(f"  Prefix: {Colors.OKBLUE}{selected_prefix.name}{Colors.ENDC}")
 
+    if runtime_path and runtime_path.exists():
+        print(f"  Runtime: {Colors.OKBLUE}{runtime_path.name}{Colors.ENDC}")
+    else:
+        print(f"  Runtime: {Colors.WARNING}System Libraries{Colors.ENDC}")
+
     if user_options is not None:
         user_opts = user_options
     elif sys.stdin.isatty():
@@ -78,9 +87,7 @@ def run_executable(exe_path, args, prefix_name=None, user_options=None):
     else:
         user_opts = ""
 
-    env = os.environ.copy()
-    env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
-    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+    env = get_proton_env(selected_prefix, runtime_path)
     
     cmd = [str(proton_path / "proton"), "run", str(exe_file)] + args
     wrappers = []
@@ -103,7 +110,10 @@ def run_executable(exe_path, args, prefix_name=None, user_options=None):
         print(f"{Colors.FAIL}✖ Execution error: {e}{Colors.ENDC}")
 
 def run_installed_app(args):
-    proton_path = load_config()
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    
     if not proton_path or not proton_path.exists():
         print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
@@ -287,10 +297,13 @@ Categories=Utility;
 
     print(f"{Colors.HEADER}➜ Starting Application{Colors.ENDC}")
     print(f"  Exe: {Colors.OKBLUE}{selected_exe}{Colors.ENDC}")
+    
+    if runtime_path and runtime_path.exists():
+        print(f"  Runtime: {Colors.OKBLUE}{runtime_path.name}{Colors.ENDC}")
+    else:
+        print(f"  Runtime: {Colors.WARNING}System Libraries{Colors.ENDC}")
 
-    env = os.environ.copy()
-    env["STEAM_COMPAT_DATA_PATH"] = str(selected_prefix)
-    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+    env = get_proton_env(selected_prefix, runtime_path)
     
     cmd = [str(proton_path / "proton"), "run", str(selected_exe)] + args
     wrappers = []

@@ -2,11 +2,15 @@ import os
 import sys
 from .constants import BASE_DIR, Colors
 
-def get_proton_env(prefix_path):
+def get_proton_env(prefix_path, runtime_path=None):
     """Returns the environment variables required for Proton."""
     env = os.environ.copy()
     env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+    
+    if runtime_path and runtime_path.exists():
+        env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(runtime_path.parent.parent.parent)
+    else:
+        env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
     return env
 
 def print_progress_bar(action, percent):

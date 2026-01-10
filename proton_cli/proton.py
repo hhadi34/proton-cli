@@ -5,7 +5,7 @@ import urllib.request
 import tarfile
 import shutil
 from pathlib import Path
-from .constants import Colors, SEARCH_PATHS, VERSIONS_DIR
+from .constants import Colors, SEARCH_PATHS, VERSIONS_DIR, RUNTIME_SEARCH_PATHS
 from .config import save_config, load_config
 from .core import download_progress_hook, print_progress_bar
 
@@ -58,6 +58,31 @@ def find_existing_protons():
         return best_proton
     
     print(f"\n{Colors.FAIL}✖ No installed Proton version found on the system.{Colors.ENDC}")
+    return None
+
+def find_steam_runtime():
+    """Searches for Steam Runtime installations."""
+    print(f"{Colors.HEADER}➜ Scanning for Steam Runtime...{Colors.ENDC}")
+    
+    runtime_names = ["SteamLinuxRuntime_sniper", "SteamLinuxRuntime_soldier", "SteamLinuxRuntime"]
+    found_runtimes = []
+
+    for path in RUNTIME_SEARCH_PATHS:
+        if not path.exists():
+            continue
+            
+        for name in runtime_names:
+            runtime_path = path / name
+            if runtime_path.exists() and runtime_path.is_dir():
+                found_runtimes.append(runtime_path)
+
+    if found_runtimes:
+        found_runtimes.sort(key=lambda x: runtime_names.index(x.name) if x.name in runtime_names else 99)
+        best_runtime = found_runtimes[0]
+        print(f"{Colors.OKGREEN}✔ Found Steam Runtime:{Colors.ENDC} {best_runtime.name}")
+        return best_runtime
+    
+    print(f"{Colors.WARNING}⚠ Steam Runtime not found. Applications will run with system libraries.{Colors.ENDC}")
     return None
 
 def download_ge_proton():
@@ -159,10 +184,11 @@ def delete_proton():
                         shutil.rmtree(selected)
                         print(f"{Colors.OKGREEN}✔ Version deleted.{Colors.ENDC}")
                         
-                        current_path = load_config()
+                        conf = load_config()
+                        current_path = conf.get("proton_path")
                         if current_path and current_path.resolve() == selected.resolve():
                             print(f"{Colors.WARNING}⚠ Deleted version was set as default. Clearing configuration...{Colors.ENDC}")
-                            save_config(None)
+                            save_config(None, conf.get("runtime_path"))
                     except Exception as e:
                         print(f"{Colors.FAIL}✖ Deletion failed: {e}{Colors.ENDC}")
                 else:

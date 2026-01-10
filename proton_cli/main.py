@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from .constants import Colors, VERSION, VERSIONS_DIR
 from .config import save_config, load_config
-from .proton import find_existing_protons, download_ge_proton, delete_proton
+from .proton import find_existing_protons, download_ge_proton, delete_proton, find_steam_runtime
 
 def print_help_table():
     banner = r"""
@@ -92,6 +92,7 @@ def main():
 
     if args.command == "check":
         proton_path = find_existing_protons()
+        runtime_path = None
         
         if not proton_path:
             print(f"\n{Colors.WARNING}⚠ Proton not found in standard directories.{Colors.ENDC}")
@@ -114,7 +115,10 @@ def main():
                 else:
                     print("Operation cancelled.")
 
-        save_config(proton_path)
+        if proton_path:
+            runtime_path = find_steam_runtime()
+
+        save_config(proton_path, runtime_path)
         if proton_path:
             print(f"Path to use: {proton_path}")
 
@@ -139,7 +143,9 @@ def main():
                     
                     print("\nUpdating configuration...")
                     proton_path = find_existing_protons()
-                    save_config(proton_path)
+                    conf = load_config()
+                    runtime_path = conf.get("runtime_path")
+                    save_config(proton_path, runtime_path)
 
     elif args.command == "proton-delete":
         delete_proton()

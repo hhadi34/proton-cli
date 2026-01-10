@@ -24,9 +24,8 @@ pipx is needed because it will create a contained environment for python without
 Run this command:
 
 ```bash
-mkdir -p ~/proton-cli
-cd ~/proton-cli
 git clone https://github.com/hhadi34/proton-cli.git
+cd ~/proton-cli
 ```
 
 This will be the building directory.

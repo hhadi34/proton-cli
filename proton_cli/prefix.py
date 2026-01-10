@@ -4,9 +4,12 @@ import os
 from pathlib import Path
 from .constants import Colors, PREFIXES_DIR, BASE_DIR
 from .config import load_config
+from .core import get_proton_env
 
 def create_prefix(name):
-    proton_path = load_config()
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
     
     if not proton_path or not proton_path.exists():
         print(f"{Colors.FAIL}✖ Selected Proton version not found. Please use 'check' or 'pull' command first.{Colors.ENDC}")
@@ -30,9 +33,7 @@ def create_prefix(name):
     
     print(f"{Colors.OKBLUE}➜ Initializing Wine Prefix (this may take a while)...{Colors.ENDC}")
 
-    env = os.environ.copy()
-    env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+    env = get_proton_env(prefix_path, runtime_path)
 
     try:
         subprocess.run([str(proton_path / "proton"), "run", "wineboot"], env=env, check=True)

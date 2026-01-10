@@ -4,13 +4,7 @@ import shutil
 from pathlib import Path
 from .constants import Colors, BASE_DIR, PREFIXES_DIR
 from .config import load_config
-
-def _get_proton_path():
-    proton_path = load_config()
-    if not proton_path or not proton_path.exists():
-        print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
-        return None
-    return proton_path
+from .core import get_proton_env
 
 def _select_prefix(prompt_msg):
     if not PREFIXES_DIR.exists():
@@ -37,10 +31,8 @@ def _select_prefix(prompt_msg):
         except ValueError:
             print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
-def _run_proton_cmd(proton_path, prefix_path, cmd, description):
-    env = os.environ.copy()
-    env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+def _run_proton_cmd(proton_path, prefix_path, cmd, description, runtime_path=None):
+    env = get_proton_env(prefix_path, runtime_path)
     
     if description:
         print(f"{Colors.OKBLUE}➜ Starting {description}...{Colors.ENDC}")
@@ -51,18 +43,24 @@ def _run_proton_cmd(proton_path, prefix_path, cmd, description):
         print(f"{Colors.FAIL}✖ Execution error: {e}{Colors.ENDC}")
 
 def run_winecfg():
-    proton_path = _get_proton_path()
-    if not proton_path: return
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    if not proton_path or not proton_path.exists():
+        print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
+        return
 
     prefix = _select_prefix("Select Prefix to Configure")
     if not prefix: return
 
     cmd = [str(proton_path / "proton"), "run", "winecfg"]
-    _run_proton_cmd(proton_path, prefix, cmd, "Wine configuration")
+    _run_proton_cmd(proton_path, prefix, cmd, "Wine configuration", runtime_path)
 
 def run_regedit(reg_file_path):
-    proton_path = _get_proton_path()
-    if not proton_path: return
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    if not proton_path or not proton_path.exists(): return
 
     reg_file = Path(reg_file_path).resolve()
     if not reg_file.exists():
@@ -76,11 +74,13 @@ def run_regedit(reg_file_path):
     print(f"  File: {reg_file.name}")
     
     cmd = [str(proton_path / "proton"), "run", "regedit", str(reg_file)]
-    _run_proton_cmd(proton_path, prefix, cmd, None)
+    _run_proton_cmd(proton_path, prefix, cmd, None, runtime_path)
 
 def run_regsvr32(args):
-    proton_path = _get_proton_path()
-    if not proton_path: return
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    if not proton_path or not proton_path.exists(): return
 
     prefix = _select_prefix("Select Prefix to Run regsvr32")
     if not prefix: return
@@ -109,24 +109,28 @@ def run_regsvr32(args):
             final_args.append(arg)
     
     cmd = [str(proton_path / "proton"), "run", "regsvr32"] + final_args
-    _run_proton_cmd(proton_path, prefix, cmd, None)
+    _run_proton_cmd(proton_path, prefix, cmd, None, runtime_path)
 
 def run_taskmgr():
-    proton_path = _get_proton_path()
-    if not proton_path: return
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    if not proton_path or not proton_path.exists(): return
 
     prefix = _select_prefix("Select Prefix to Run Task Manager")
     if not prefix: return
 
     cmd = [str(proton_path / "proton"), "run", "taskmgr"]
-    _run_proton_cmd(proton_path, prefix, cmd, "Task Manager")
+    _run_proton_cmd(proton_path, prefix, cmd, "Task Manager", runtime_path)
 
 def run_uninstaller():
-    proton_path = _get_proton_path()
-    if not proton_path: return
+    conf = load_config()
+    proton_path = conf.get("proton_path")
+    runtime_path = conf.get("runtime_path")
+    if not proton_path or not proton_path.exists(): return
 
     prefix = _select_prefix("Select Prefix to Run Uninstaller")
     if not prefix: return
 
     cmd = [str(proton_path / "proton"), "run", "uninstaller"]
-    _run_proton_cmd(proton_path, prefix, cmd, "Uninstaller")
+    _run_proton_cmd(proton_path, prefix, cmd, "Uninstaller", runtime_path)
