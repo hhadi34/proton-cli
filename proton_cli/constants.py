@@ -9,7 +9,7 @@ class Colors:
     GRAY = '\033[38;5;240m'         
     ENDC = '\033[0m'
 
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 
 UPDATE_URL = "https://raw.githubusercontent.com/hhadi34/proton-cli/main/proton_cli.py"
 

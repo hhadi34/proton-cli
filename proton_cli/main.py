@@ -9,7 +9,7 @@ from .proton import find_existing_protons, download_ge_proton, delete_proton, fi
 
 def print_help_table():
     banner = r"""
-  ____            _                    ____ _     ___ 
+_____            _                    ____ _     ___ 
 |  _ \ _ __ ___ | |_ ___  _ __       / ___| |   |_ _|
 | |_) | '__/ _ \| __/ _ \| '_ \_____| |   | |    | | 
 |  __/| | | (_) | || (_) | | | |____| |___| |___ | | 
