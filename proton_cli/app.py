@@ -6,7 +6,7 @@ from pathlib import Path
 from .constants import Colors, BASE_DIR, PREFIXES_DIR, RUNTIME_DIR
 from .config import load_config
 from .prefix import create_prefix
-from .core import get_proton_env
+from .core import get_proton_env, create_proton_command, debug_log
 
 def run_executable(exe_path, args, prefix_name=None, user_options=None):
     conf = load_config()
@@ -87,9 +87,8 @@ def run_executable(exe_path, args, prefix_name=None, user_options=None):
     else:
         user_opts = ""
 
-    env = get_proton_env(selected_prefix, runtime_path)
+    env = get_proton_env(selected_prefix, runtime_path, proton_path)
     
-    cmd = [str(proton_path / "proton"), "run", str(exe_file)] + args
     wrappers = []
     if user_opts:
         parts = shlex.split(user_opts)
@@ -100,7 +99,12 @@ def run_executable(exe_path, args, prefix_name=None, user_options=None):
             else:
                 wrappers.append(part)
 
-    cmd = wrappers + [str(proton_path / "proton"), "run", str(exe_file)] + args
+    proton_args = ["run", str(exe_file)] + args
+    cmd = create_proton_command(proton_path, runtime_path, proton_args, wrappers)
+    
+    debug_log(f"Full Command: {cmd}")
+    debug_log(f"Env STEAM_COMPAT_DATA_PATH: {env.get('STEAM_COMPAT_DATA_PATH')}")
+    debug_log(f"Env STEAM_COMPAT_CLIENT_INSTALL_PATH: {env.get('STEAM_COMPAT_CLIENT_INSTALL_PATH')}")
     
     try:
         subprocess.run(cmd, env=env, cwd=exe_file.parent)
@@ -254,12 +258,9 @@ def run_installed_app(args):
             applications_dir.mkdir(parents=True, exist_ok=True)
             desktop_file_path = applications_dir / desktop_file_name
     
-        # Helper to quote arguments for .desktop Exec key
         def desktop_quote(s):
             return '"' + str(s).replace('\\', '\\\\').replace('"', '\\"') + '"'
 
-        # Construct the Exec line
-        # We use sys.executable -m proton_cli run -p "Prefix" -o "Options" "Exe"
         base_cmd_parts = [sys.executable, "-m", "proton_cli", "run", str(selected_exe)]
         
         if selected_prefix:
@@ -303,9 +304,8 @@ Categories=Utility;
     else:
         print(f"  Runtime: {Colors.WARNING}System Libraries{Colors.ENDC}")
 
-    env = get_proton_env(selected_prefix, runtime_path)
+    env = get_proton_env(selected_prefix, runtime_path, proton_path)
     
-    cmd = [str(proton_path / "proton"), "run", str(selected_exe)] + args
     wrappers = []
     if user_opts:
         parts = shlex.split(user_opts)
@@ -316,7 +316,12 @@ Categories=Utility;
             else:
                 wrappers.append(part)
 
-    cmd = wrappers + [str(proton_path / "proton"), "run", str(selected_exe)] + args
+    proton_args = ["run", str(selected_exe)] + args
+    cmd = create_proton_command(proton_path, runtime_path, proton_args, wrappers)
+    
+    debug_log(f"Full Command: {cmd}")
+    debug_log(f"Env STEAM_COMPAT_DATA_PATH: {env.get('STEAM_COMPAT_DATA_PATH')}")
+    debug_log(f"Env STEAM_COMPAT_CLIENT_INSTALL_PATH: {env.get('STEAM_COMPAT_CLIENT_INSTALL_PATH')}")
     
     try:
         subprocess.run(cmd, env=env)

@@ -40,6 +40,10 @@ _____            _                    ____ _     ___
         print(f"{Colors.OKGREEN}{cmd:<25}{Colors.ENDC} {desc}")
     print("-" * 80)
 
+    print(f"\n{Colors.HEADER}Global Options:{Colors.ENDC}")
+    print(f"{Colors.OKGREEN}{'-d, --debug':<25}{Colors.ENDC} Enable debug logging")
+    print(f"{Colors.OKGREEN}{'-h, --help':<25}{Colors.ENDC} Show help menu")
+
 def main():
     class CustomParser(argparse.ArgumentParser):
         def error(self, message):
@@ -51,6 +55,7 @@ def main():
 
     parser = CustomParser(description="Proton-CLI", add_help=False)
     parser.add_argument('-h', '--help', action='store_true', help="Show help menu")
+    parser.add_argument('-d', '--debug', action='store_true', help="Enable debug logging")
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("check", help="Scan and configure Proton versions on the system")
@@ -89,6 +94,10 @@ def main():
     if args.help or not args.command:
         print_help_table()
         return
+
+    if args.debug:
+        os.environ["PROTON_CLI_DEBUG"] = "1"
+        print(f"{Colors.WARNING}⚠ Debug mode enabled.{Colors.ENDC}")
 
     if args.command == "check":
         proton_path = find_existing_protons()
@@ -150,7 +159,6 @@ def main():
     elif args.command == "proton-delete":
         delete_proton()
 
-    # Lazy imports for modules not yet created
     elif args.command == "prefix-make":
         from .prefix import create_prefix
         name = args.name

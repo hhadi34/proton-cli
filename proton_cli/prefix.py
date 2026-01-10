@@ -33,7 +33,7 @@ def create_prefix(name):
     
     print(f"{Colors.OKBLUE}➜ Initializing Wine Prefix (this may take a while)...{Colors.ENDC}")
 
-    env = get_proton_env(prefix_path, runtime_path)
+    env = get_proton_env(prefix_path, runtime_path, proton_path)
 
     try:
         subprocess.run([str(proton_path / "proton"), "run", "wineboot"], env=env, check=True)

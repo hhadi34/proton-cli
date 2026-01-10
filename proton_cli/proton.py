@@ -146,19 +146,13 @@ def download_ge_proton():
         return None
 
 def delete_proton():
-    print(f"{Colors.HEADER}➜ Scanning for Proton Versions to Delete...{Colors.ENDC}")
+    print(f"{Colors.HEADER}➜ Scanning for downloaded Proton Versions to Delete...{Colors.ENDC}")
     versions = []
     
-    for path in SEARCH_PATHS:
-        if not path.exists():
-            continue
-            
-        try:
-            for item in path.iterdir():
-                if item.is_dir() and (item / "proton").exists():
-                    versions.append(item)
-        except Exception:
-            continue
+    if VERSIONS_DIR.exists():
+        for item in VERSIONS_DIR.iterdir():
+            if item.is_dir() and (item / "proton").exists():
+                versions.append(item)
 
     if not versions:
         print(f"{Colors.WARNING}⚠ No Proton versions found.{Colors.ENDC}")

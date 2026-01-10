@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from .constants import Colors, BASE_DIR, PREFIXES_DIR
 from .config import load_config
-from .core import get_proton_env
+from .core import get_proton_env, create_proton_command, debug_log
 
 def _select_prefix(prompt_msg):
     if not PREFIXES_DIR.exists():
@@ -32,7 +32,10 @@ def _select_prefix(prompt_msg):
             print(f"{Colors.FAIL}✖ Please enter a number.{Colors.ENDC}")
 
 def _run_proton_cmd(proton_path, prefix_path, cmd, description, runtime_path=None):
-    env = get_proton_env(prefix_path, runtime_path)
+    env = get_proton_env(prefix_path, runtime_path, proton_path)
+    
+    debug_log(f"Full Command: {cmd}")
+    debug_log(f"Env STEAM_COMPAT_DATA_PATH: {env.get('STEAM_COMPAT_DATA_PATH')}")
     
     if description:
         print(f"{Colors.OKBLUE}➜ Starting {description}...{Colors.ENDC}")
@@ -53,7 +56,7 @@ def run_winecfg():
     prefix = _select_prefix("Select Prefix to Configure")
     if not prefix: return
 
-    cmd = [str(proton_path / "proton"), "run", "winecfg"]
+    cmd = create_proton_command(proton_path, runtime_path, ["run", "winecfg"])
     _run_proton_cmd(proton_path, prefix, cmd, "Wine configuration", runtime_path)
 
 def run_regedit(reg_file_path):
@@ -73,7 +76,7 @@ def run_regedit(reg_file_path):
     print(f"{Colors.HEADER}➜ Applying Registry File{Colors.ENDC}")
     print(f"  File: {reg_file.name}")
     
-    cmd = [str(proton_path / "proton"), "run", "regedit", str(reg_file)]
+    cmd = create_proton_command(proton_path, runtime_path, ["run", "regedit", str(reg_file)])
     _run_proton_cmd(proton_path, prefix, cmd, None, runtime_path)
 
 def run_regsvr32(args):
@@ -108,7 +111,7 @@ def run_regsvr32(args):
         else:
             final_args.append(arg)
     
-    cmd = [str(proton_path / "proton"), "run", "regsvr32"] + final_args
+    cmd = create_proton_command(proton_path, runtime_path, ["run", "regsvr32"] + final_args)
     _run_proton_cmd(proton_path, prefix, cmd, None, runtime_path)
 
 def run_taskmgr():
@@ -120,7 +123,7 @@ def run_taskmgr():
     prefix = _select_prefix("Select Prefix to Run Task Manager")
     if not prefix: return
 
-    cmd = [str(proton_path / "proton"), "run", "taskmgr"]
+    cmd = create_proton_command(proton_path, runtime_path, ["run", "taskmgr"])
     _run_proton_cmd(proton_path, prefix, cmd, "Task Manager", runtime_path)
 
 def run_uninstaller():
@@ -132,5 +135,5 @@ def run_uninstaller():
     prefix = _select_prefix("Select Prefix to Run Uninstaller")
     if not prefix: return
 
-    cmd = [str(proton_path / "proton"), "run", "uninstaller"]
+    cmd = create_proton_command(proton_path, runtime_path, ["run", "uninstaller"])
     _run_proton_cmd(proton_path, prefix, cmd, "Uninstaller", runtime_path)
