@@ -23,6 +23,14 @@ VERSIONS_DIR = BASE_DIR / "versions"
 RUNTIME_DIR = BASE_DIR / "runtime"
 
 
+RUNTIME_SEARCH_PATHS = [
+    Path.home() / ".steam/steam/steamapps/common",
+    Path.home() / ".steam/root/steamapps/common",
+    Path.home() / ".local/share/Steam/steamapps/common",
+    Path.home() / ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common",
+    Path.home() / "snap/steam/common/.local/share/Steam/steamapps/common",
+]
+
 SEARCH_PATHS = [
     Path.home() / ".steam/steam/steamapps/common",
     Path.home() / ".steam/root/steamapps/common",
