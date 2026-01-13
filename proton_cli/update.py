@@ -3,9 +3,8 @@ import urllib.request
 import re
 import sys
 from pathlib import Path
-from .constants import Colors, VERSION
+from .constants import Colors, VERSION, REPO_UPDATE_API_URL
 
-REPO_API_URL = "https://api.github.com/repos/hhadi34/proton-cli/contents/proton_cli"
 RAW_CONSTANTS_URL = "https://raw.githubusercontent.com/hhadi34/proton-cli/main/proton_cli/constants.py"
 
 def get_remote_version():
@@ -49,7 +48,7 @@ def update_self():
     print(f"\n{Colors.HEADER}➜ Updating...{Colors.ENDC}")
     
     try:
-        req = urllib.request.Request(REPO_API_URL, headers={'User-Agent': 'proton-cli'})
+        req = urllib.request.Request(REPO_UPDATE_API_URL, headers={'User-Agent': 'proton-cli'})
         with urllib.request.urlopen(req) as response:
             files = json.loads(response.read().decode())
         

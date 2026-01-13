@@ -1,9 +1,3 @@
 .git/
 
-Memory_bank/
-
-.gitignore
-
-build/
-
-proton_cli.egg-info/
+AGENTS.md

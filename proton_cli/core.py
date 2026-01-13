@@ -47,16 +47,4 @@ def create_proton_command(proton_path, runtime_path, proton_args, wrappers=None)
 def debug_log(message):
     if os.environ.get("PROTON_CLI_DEBUG"):
         print(f"{Colors.WARNING}[DEBUG] {message}{Colors.ENDC}")
-
-def print_progress_bar(action, percent):
-    if percent > 100: percent = 100
-    bar_length = 40
-    filled_length = int(bar_length * percent // 100)
-    bar = '=' * filled_length + '-' * (bar_length - filled_length)
-    sys.stdout.write(f'\r{Colors.OKBLUE}{action}:{Colors.ENDC} [{Colors.OKGREEN}{bar}{Colors.ENDC}] {percent}%')
-    sys.stdout.flush()
-
-def download_progress_hook(count, block_size, total_size):
-    if total_size > 0:
-        percent = int(count * block_size * 100 / total_size)
-        print_progress_bar("Downloading", percent)
+        
