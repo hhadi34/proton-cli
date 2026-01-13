@@ -9,7 +9,7 @@ class Colors:
     GRAY = '\033[38;5;240m'
     ENDC = '\033[0m'
 
-VERSION = "2.1.0"
+VERSION = "2.1.1"
 
 
 GE_PROTON_API_URL = "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest"

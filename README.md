@@ -2,9 +2,7 @@
 
 **Proton-Cli** is a tool that helps you run proton outside of steam. It downloads proton, manages prefixes, runs .exe's, manages installed applications through smartlisting and a lot more i can't list! The best part about all of this is it's incredibly easy to manage for the end-users out there. 
 
-Before using this application i want to be open about how i made the app and its downsides. Firstly this project was vibecoded meaning the code was written by ai. But besides from the writing of the code, every other thing (debugging, testing, distrubuting, commiting) is maintained by me. Secondly there isn't an installation method that is distro-specific. Although many of you would prefer this, the end user might still find it difficult to install (i will try to help as much as i can in the installation segment). Lastly, steam runtime (at the time of developing) is not available. This means some performance issues or errors could happen(although unlikely for modern distros there is still a chance). Luckily i have implemented the steam runtime before (1.4.1) that's why it shouldn't be a problem.
-
-*Warning:* This version of the tool is not production ready yet. Although i added a tutorial on how to install it, i did not want a full release because i wanted to take a diffirent approach on the tool instead of what i did in the 1.4.x release cycle. 
+Before using this application i want to be open about how i made the app and its downsides. Firstly this project was vibecoded meaning the code was written by ai. But besides from the writing of the code, every other thing (debugging, testing, distrubuting, commiting) is maintained by me.  Secondly, proton needs something called "steam runtime". To put it simply it is specific libraries for proton to use. You can use proton without using steam runtime but you may encounter performance issues(not a big issue unless you are running high-end software/games). To fix that i added a little steam runtime wrapper. But to make steam runtime work you have to install steam and download steam runtime(3.0 or 2.0). The way this tool handles runtime seperates it from umu-launcher (another tool to use proton outside of steam that mimics the environment of steam runtime. However it is still complicated for the end-user) 
 
 
 ## Installation
@@ -71,20 +69,7 @@ To run a .exe file:
 proton-cli run /path/to/file.exe
 ```
 
-This will create a new prefix automatically if one doesn’t exist and ask for environment variables if you would like one
-
-*Note:* The first .exe you run is often the installer. After installation, use run-app to find and launch the actual executable.
-
-### 4. Running Installed Applications
-
-To find and launch installed apps:
-
-```bash
-proton-cli run-app
-```
-
-This lists out the .exe extension files in a prefix. With the smartlisting feature usually the first few .exe is the correct one. You can also save this configurations you made by creating a .desktop(basically a shortcut). The tool will create a .desktop for you if you say yes in the terminal
-
+This will create a new prefix automatically if one doesn’t exist and ask for environment variables if you would like one. If you want a shortcut (.desktop file) you may add one or update an already existing one.
 
 
 ### 5. Help
@@ -92,9 +77,9 @@ This lists out the .exe extension files in a prefix. With the smartlisting featu
 For full command reference:
 
 ```bash
-proton-cli -h
+proton-cli help
 ```
 
 ## The Future of Proton-Cli
 
-I did not get a chance to try this tool in other systems or distros (i use linux mint btw) and like i said this tool doesn't have distro specific installation methods. I want to publish this through distro repos in the future. Although it is near-future steam runtime wrapper will also be added.
+There are a lot of testing and bug fixing documentation i need to do to make the tool better. 
