@@ -3,7 +3,7 @@ import os
 import subprocess
 import shlex
 from pathlib import Path
-from .constants import Colors, PREFIXES_DIR
+from .constants import Colors, PREFIXES_DIR, BASE_DIR
 from .config import load_config
 from .prefix_make import create_prefix
 from .core import get_proton_env, create_proton_command, debug_log
@@ -47,9 +47,11 @@ def _create_desktop_shortcut(exe_path, prefix_name, user_options, args):
             safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in shortcut_name).strip()
             desktop_file_path = applications_dir / f"proton-cli-{safe_filename.lower()}.desktop"
 
-    # Construct Exec Command
-    def quote(s):
-        return '"' + str(s).replace('\\', '\\\\').replace('"', '\\"') + '"'
+   
+    shortcuts_dir = BASE_DIR / "shortcuts"
+    shortcuts_dir.mkdir(parents=True, exist_ok=True)
+    safe_script_name = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in shortcut_name).strip().lower()
+    wrapper_script_path = shortcuts_dir / f"launch_{safe_script_name}.sh"
 
     cmd_parts = [sys.executable, "-m", "proton_cli", "run"]
     if prefix_name:
@@ -62,7 +64,19 @@ def _create_desktop_shortcut(exe_path, prefix_name, user_options, args):
     if args:
         cmd_parts.extend(args)
 
-    exec_line = " ".join(quote(part) for part in cmd_parts)
+    # Write the shell script
+    script_content = "#!/bin/bash\n"
+    script_content += " ".join(shlex.quote(str(part)) for part in cmd_parts)
+    
+    try:
+        with open(wrapper_script_path, "w") as f:
+            f.write(script_content)
+        os.chmod(wrapper_script_path, 0o755)
+    except Exception as e:
+        print(f"{Colors.FAIL}✖ Failed to create wrapper script: {e}{Colors.ENDC}")
+        return
+
+    exec_line = f'"{wrapper_script_path}"'
 
     content = f"""[Desktop Entry]
 Name={shortcut_name}
@@ -150,9 +164,19 @@ def run_executable(exe_path, args, prefix_name=None, user_options=None):
     # Execution
     print(f"\n{Colors.HEADER}➜ Launching: {Colors.OKBLUE}{exe_file.name}{Colors.ENDC}")
     
-    wrappers = shlex.split(user_options) if user_options else []
-    cmd = create_proton_command(proton_path, runtime_path, ["run", str(exe_file)] + args, wrappers)
     env = get_proton_env(selected_prefix, runtime_path, proton_path)
+    
+    parsed_options = shlex.split(user_options) if user_options else []
+    real_wrappers = []
+    
+    for opt in parsed_options:
+        if '=' in opt and not opt.startswith('-'):
+            key, val = opt.split('=', 1)
+            env[key] = val
+        else:
+            real_wrappers.append(opt)
+
+    cmd = create_proton_command(proton_path, runtime_path, ["run", str(exe_file)] + args, real_wrappers)
 
     try:
         subprocess.run(cmd, env=env, cwd=exe_file.parent)
