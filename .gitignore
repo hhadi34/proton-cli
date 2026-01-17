@@ -1,5 +1,8 @@
 .git/
-AGENT.md
+build_rpm/
 .vscode/
 build/
 proton_cli.egg-info/
+AGENT.md
+deb.sh
+rpm.sh

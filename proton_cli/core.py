@@ -34,8 +34,12 @@ def create_proton_command(proton_path, runtime_path, proton_args, wrappers=None)
     final_cmd = base_cmd
     
     if runtime_path and runtime_path.exists():
-        # Steam Runtime (Sniper/Soldier) entry point
-        runtime_run = runtime_path / "run"
+        
+        runtime_run = runtime_path / "_v2-entry-point"
+        
+        if not runtime_run.exists():
+            runtime_run = runtime_path / "run"
+
         if runtime_run.exists():
             final_cmd = [str(runtime_run), "--"] + base_cmd
             

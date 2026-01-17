@@ -7,17 +7,34 @@ Before using this application i want to be open about how i made the app and its
 
 ## Installation
 
-### 1. Download pipx and git for your distro
+### Download for Debian (and derrivatives)
 
-For example for debian/ubuntu:
+Install .deb file through the [Releases](#) page and open it. (If you don't have a graphical installer run this command)
+
 
 ```bash
-sudo apt install pipx git
+sudo dpkg -i proton-cli.deb # Change the .deb file's name to the version you downloaded
 ```
 
-pipx is needed because it will create a contained environment for python without breaking the system packages.
+### Download for Fedora (and derrivatives)
 
-### 2. Clone the repository in a new directory using git
+Install .rpm file through the [Releases](#) page and open it. (If you don't have a graphical installer run this command)
+
+```bash
+sudo dnf install ./proton-cli.rpm # Change the .rpm file's name to the version you downloaded
+```
+
+### Download through pipx (for other distros) 
+
+#### 1. Install pipx
+
+For example for Arch Linux:
+
+```bash
+sudo pacman -S python-pipx git
+```
+
+#### 2. Clone the repository in a new directory using git
 
 Run this command:
 
@@ -26,17 +43,13 @@ git clone https://github.com/hhadi34/proton-cli.git
 cd ~/proton-cli
 ```
 
-This will be the building directory.
-
-### 3. Install the app
+#### 3. Install the app
 
 Install the app by running
 
 ```bash
 pipx install .
 ```
-
-This command will build the app in the ~/.local/share/pipx/venvs/proton-cli/ directory.
 
 
 ## Usage
@@ -72,7 +85,7 @@ proton-cli run /path/to/file.exe
 This will create a new prefix automatically if one doesn’t exist and ask for environment variables if you would like one. If you want a shortcut (.desktop file) you may add one or update an already existing one.
 
 
-### 5. Help
+### 4. Help
 
 For full command reference:
 
@@ -80,6 +93,20 @@ For full command reference:
 proton-cli help
 ```
 
-## The Future of Proton-Cli
+## FAQ
 
-There are a lot of testing and bug fixing documentation i need to do to make the tool better. 
+### Will there be Proton-GUI?
+
+One of the reason i made proton-cli was because i wanted make a lightweight tool unlike some heavy one (like bottles). That's why instead of a GUI app i made it cli (it is still easy to use though). I would like to make GUI but i still think there are more stuff that needs to be added to the tool.
+
+### Why should i use this when i can use umu-launcher?
+
+There are 2 things that we do different than umu-launcher:
+
+**1.** Proton-cli is an all in one tool meaning it does everything from managing prefixes, managing protons, running applications and a lot more. Also this tool was made with end-user in mind.
+
+**2.** Umu-launcher is it's own wrapper meaning it copies everything that steam does while proton-cli is kind of bridge between steam and the application meaning it contacts with steam directly. That's why to use steam runtime you need to have steam and the runtime installed. 
+
+### Will there be install method for other distros?
+
+Right now proton-cli has native installations for debian and fedora. There will be more install methods for distros. (AUR, void linux, gentoo etc.)
