@@ -22,6 +22,7 @@ def pull_proton():
     print(f"{Colors.HEADER}➜ Starting GE-Proton Download...{Colors.ENDC}")
     
     try:
+        download_progress_hook.last_percent = -1
         req = urllib.request.Request(GE_PROTON_API_URL, headers={'User-Agent': 'proton-cli'})
         with urllib.request.urlopen(req) as response:
             data = json.loads(response.read().decode())

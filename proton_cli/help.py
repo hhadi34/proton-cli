@@ -9,7 +9,8 @@ def print_help():
     
     commands = [
         ("check", "Scan and configure Proton versions"),
-        ("pull", "Download latest GE-Proton"),
+        ("pull-proton", "Download latest GE-Proton"),
+        ("pull-runtime", "Download Steam Linux Runtime (Sniper)"),
         ("proton-delete", "Delete Proton versions"),
         ("prefix-make [name]", "Create a new Wine prefix"),
         ("prefix-delete", "Delete an existing prefix"),

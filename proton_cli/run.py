@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import shlex
+import re
 from pathlib import Path
 from .constants import Colors, PREFIXES_DIR, BASE_DIR
 from .config import load_config
@@ -12,22 +13,33 @@ def _create_desktop_shortcut(exe_path, prefix_name, user_options, args):
     """Handles the creation or update of a .desktop shortcut."""
     applications_dir = Path.home() / ".local/share/applications"
     shortcut_name = exe_path.stem
-    desktop_file_name = f"proton-cli-{shortcut_name.lower().replace(' ', '-')}.desktop"
+    
+    safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in shortcut_name).strip().lower()
+    desktop_file_name = f"proton-cli-{safe_filename}.desktop"
     desktop_file_path = applications_dir / desktop_file_name
     
     # Check for existing shortcut
     existing_path = None
+
     if applications_dir.exists():
         for item in applications_dir.iterdir():
-            if item.is_file() and item.name.endswith(".desktop"):
+            if item.is_file() and item.name.startswith("proton-cli-") and item.name.endswith(".desktop"):
                 try:
                     with open(item, 'r', errors='ignore') as f:
                         content = f.read()
-                        if str(exe_path) in content and "proton-cli" in content:
-                            existing_path = item
-                            break
+                    match = re.search(r'^Exec=["\']?([^"\']+)["\']?', content, re.MULTILINE)
+                    if match:
+                        wrapper_path = Path(match.group(1))
+                        if wrapper_path.exists() and wrapper_path.is_file():
+                            with open(wrapper_path, 'r', errors='ignore') as wf:
+                                if str(exe_path) in wf.read():
+                                    existing_path = item
+                                    break
                 except Exception:
                     continue
+
+    if not existing_path and desktop_file_path.exists():
+        existing_path = desktop_file_path
 
     # User Interaction
     if existing_path:
@@ -44,8 +56,8 @@ def _create_desktop_shortcut(exe_path, prefix_name, user_options, args):
         name_input = input(f"{Colors.OKGREEN}Enter shortcut name [Default: {shortcut_name}]: {Colors.ENDC}").strip()
         if name_input:
             shortcut_name = name_input
-            safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in shortcut_name).strip()
-            desktop_file_path = applications_dir / f"proton-cli-{safe_filename.lower()}.desktop"
+            safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in shortcut_name).strip().lower()
+            desktop_file_path = applications_dir / f"proton-cli-{safe_filename}.desktop"
 
    
     shortcuts_dir = BASE_DIR / "shortcuts"

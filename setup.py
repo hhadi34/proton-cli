@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="proton-cli",
-    version="2.1.3",
+    version="2.2.0",
     description="Command line tool for managing Proton versions and Wine prefixes",
     author="hhadi34",
     url="https://github.com/hhadi34/proton-cli",

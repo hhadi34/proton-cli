@@ -9,7 +9,7 @@ class Colors:
     GRAY = '\033[38;5;240m'
     ENDC = '\033[0m'
 
-VERSION = "2.1.3"
+VERSION = "2.2.0"
 
 
 GE_PROTON_API_URL = "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest"
@@ -21,6 +21,7 @@ CONFIG_FILE = BASE_DIR / "config.json"
 PREFIXES_DIR = BASE_DIR / "prefixes"
 VERSIONS_DIR = BASE_DIR / "versions"
 RUNTIME_DIR = BASE_DIR / "runtime"
+RUNTIMES_DIR = BASE_DIR / "runtimes"
 
 
 RUNTIME_SEARCH_PATHS = [
@@ -29,6 +30,7 @@ RUNTIME_SEARCH_PATHS = [
     Path.home() / ".local/share/Steam/steamapps/common",
     Path.home() / ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common",
     Path.home() / "snap/steam/common/.local/share/Steam/steamapps/common",
+    RUNTIMES_DIR,
 ]
 
 SEARCH_PATHS = [

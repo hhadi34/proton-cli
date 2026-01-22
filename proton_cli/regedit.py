@@ -9,6 +9,7 @@ def run_regedit(reg_file_path):
     proton_path = conf.get("proton_path")
     runtime_path = conf.get("runtime_path")
     if not proton_path or not proton_path.exists():
+        print(f"{Colors.FAIL}✖ Proton not found. Please use 'check' command first.{Colors.ENDC}")
         return
 
     reg_file = Path(reg_file_path).resolve()

@@ -10,7 +10,7 @@ def create_prefix(name):
     runtime_path = conf.get("runtime_path")
     
     if not proton_path or not proton_path.exists():
-        print(f"{Colors.FAIL}✖ Selected Proton version not found. Please use 'check' or 'pull' command first.{Colors.ENDC}")
+        print(f"{Colors.FAIL}✖ Selected Proton version not found. Please use 'check' or 'pull-proton' command first.{Colors.ENDC}")
         return
 
     prefix_path = PREFIXES_DIR / name

@@ -17,7 +17,8 @@ def main():
 
     # Command Definitions
     subparsers.add_parser("check")
-    subparsers.add_parser("pull")
+    subparsers.add_parser("pull-proton")
+    subparsers.add_parser("pull-runtime")
     subparsers.add_parser("proton-delete")
     
     prefix_make = subparsers.add_parser("prefix-make")
@@ -59,9 +60,12 @@ def main():
     if args.command == "check":
         from .check import check_proton
         check_proton()
-    elif args.command == "pull":
-        from .pull import pull_proton
+    elif args.command == "pull-proton":
+        from .pull_proton import pull_proton
         pull_proton()
+    elif args.command == "pull-runtime":
+        from .pull_runtime import pull_runtime
+        pull_runtime()
     elif args.command == "proton-delete":
         from .proton_delete import delete_proton
         delete_proton()
@@ -104,4 +108,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

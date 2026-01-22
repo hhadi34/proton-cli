@@ -57,22 +57,49 @@ def find_steam_runtime():
     """Searches for Steam Runtime installations."""
     print(f"{Colors.HEADER}➜ Scanning for Steam Runtime...{Colors.ENDC}")
     
-    runtime_names = ["SteamLinuxRuntime_sniper", "SteamLinuxRuntime_soldier", "SteamLinuxRuntime"]
     found_runtimes = []
+    seen_paths = set()
+    priority_names = ["SteamLinuxRuntime_sniper", "SteamLinuxRuntime_soldier", "SteamLinuxRuntime"]
 
     for path in RUNTIME_SEARCH_PATHS:
         if not path.exists():
             continue
             
-        for name in runtime_names:
-            runtime_path = path / name
-            if runtime_path.exists() and runtime_path.is_dir():
-                found_runtimes.append(runtime_path)
+        try:
+            for item in path.iterdir():
+                if item.is_dir() and item.name.startswith("SteamLinuxRuntime"):
+                    if (item / "_v2-entry-point").exists() or (item / "run").exists():
+                        if item.resolve() not in seen_paths:
+                            found_runtimes.append(item)
+                            seen_paths.add(item.resolve())
+                            print(f" {Colors.OKGREEN}✔{Colors.ENDC} {item.name} {Colors.GRAY}→ {path}{Colors.ENDC}")
+        except PermissionError:
+            continue
 
     if found_runtimes:
-        found_runtimes.sort(key=lambda x: runtime_names.index(x.name) if x.name in runtime_names else 99)
-        best_runtime = found_runtimes[0]
-        print(f"{Colors.OKGREEN}✔ Found Steam Runtime:{Colors.ENDC} {best_runtime.name}")
+        found_runtimes.sort(key=lambda x: priority_names.index(x.name) if x.name in priority_names else 99)
+        
+        print(f"\n{Colors.HEADER}Found Steam Runtimes:{Colors.ENDC}")
+        for i, runtime in enumerate(found_runtimes):
+            print(f" {Colors.OKBLUE}[{i+1}]{Colors.ENDC} {runtime.name} {Colors.GRAY}({runtime.parent}){Colors.ENDC}")
+            
+        if len(found_runtimes) > 1:
+            while True:
+                try:
+                    selection = input(f"\n{Colors.OKGREEN}Select runtime (Default: 1): {Colors.ENDC}")
+                    if not selection:
+                        selection = 1
+                    selection = int(selection)
+                    if 1 <= selection <= len(found_runtimes):
+                        best_runtime = found_runtimes[selection - 1]
+                        break
+                    print(f"{Colors.FAIL}✖ Invalid selection.{Colors.ENDC}")
+                except ValueError:
+                    print(f"{Colors.FAIL}✖ Please enter a valid number.{Colors.ENDC}")
+        else:
+            best_runtime = found_runtimes[0]
+            
+        print(f"\n{Colors.OKGREEN}➜ Selected Runtime:{Colors.ENDC} {best_runtime.name}")
         return best_runtime
     
     print(f"{Colors.WARNING}⚠ Steam Runtime not found. Applications will run with system libraries.{Colors.ENDC}")

@@ -1,6 +1,6 @@
 import os
 import sys
-from .constants import BASE_DIR, Colors
+from .constants import BASE_DIR, Colors, RUNTIMES_DIR
 
 def get_proton_env(prefix_path, runtime_path=None, proton_path=None):
     """Returns the environment variables required for Proton."""
@@ -8,7 +8,11 @@ def get_proton_env(prefix_path, runtime_path=None, proton_path=None):
     env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
     
     if runtime_path and runtime_path.exists():
-        env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(runtime_path.parent.parent.parent)
+        # If using our custom runtime, keep the environment contained in .proton-cli
+        if runtime_path.parent.resolve() == RUNTIMES_DIR.resolve():
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
+        else:
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(runtime_path.parent.parent.parent)
     else:
         env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(BASE_DIR)
 
